@@ -9,6 +9,7 @@
 #include <random>
 #include <sstream>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 namespace {
@@ -42,6 +43,16 @@ struct BigOne
     {
         return strm << static_cast<int>(x);
     }
+
+    friend bool operator == (const BigOne & lhs, const BigOne & rhs)
+    {
+        return lhs.data == rhs.data;
+    }
+
+    friend bool operator != (const BigOne & lhs, const BigOne & rhs)
+    {
+        return !(lhs == rhs);
+    }
 };
 
 template <class T>
@@ -51,6 +62,8 @@ struct IntCompat
     { return x; }
     static int value(const T & x)
     { return x; }
+    static bool empty(const T & x)
+    { return x == T{}; }
 };
 
 template <>
@@ -65,6 +78,8 @@ struct IntCompat<std::string>
     }
     static int value(const std::string & x)
     { return std::stoi(x); }
+    static bool empty(const std::string & x)
+    { return x.empty(); }
 };
 
 template <class Key, class Value>
@@ -88,6 +103,9 @@ struct Type
     { return IntCompat<Value>::value(x.second); }
     static int value(const Value & x)
     { return IntCompat<Value>::value(x); }
+
+    static bool empty_value(const Value & v)
+    { return IntCompat<Value>::empty(v); }
 };
 
 template <class T>
@@ -155,32 +173,82 @@ TYPED_TEST(BPTreeTest, equal_range)
 
 TYPED_TEST(BPTreeTest, at)
 {
-    // TODO
+    EXPECT_THROW({
+                this->tree.at(TypeParam::create_key(7));
+            }, std::out_of_range);
+    this->insert(TypeParam::create(7));
+    const auto key = TypeParam::create_key(7);
+    EXPECT_EQ(TypeParam::create_value(7), this->tree.at(key));
+    EXPECT_EQ(TypeParam::create_value(7), this->const_tree().at(key));
+    EXPECT_TRUE(std::is_lvalue_reference_v<decltype(this->tree.at(key))>) << "'at' method should return an lvalue reference";
+    EXPECT_FALSE(std::is_const_v<std::remove_reference_t<decltype(this->tree.at(key))>>) << "non-const 'at' method should return a non-const reference";
+    EXPECT_TRUE(std::is_const_v<std::remove_reference_t<decltype(this->const_tree().at(key))>>) << "const 'at' method should return a const reference";
 }
 
 TYPED_TEST(BPTreeTest, index)
 {
-    // TODO
+    EXPECT_TRUE(std::is_lvalue_reference_v<decltype(this->tree.operator [](key))>) << "operator [] should return an lvalue reference";
+    EXPECT_TRUE(TypeParam::empty_value(this->tree[TypeParam::create_key(1)]));
+    this->tree[TypeParam::create_key(3)] = TypeParam::create_value(3);
+    EXPECT_EQ(TypeParam::create_value(3), this->tree[TypeParam::create_key(3)]);
 }
 
 TYPED_TEST(BPTreeTest, insert)
 {
-    // TODO
+    {
+        auto key = TypeParam::create_key(33);
+        auto value = TypeParam::create_value(33);
+        this->tree.insert(key, value);
+    }
+    {
+        const auto key = TypeParam::create_key(51);
+        this->tree.insert(key, TypeParam::create_key(51));
+    }
+    this->tree.insert(TypeParam::create_key(91), TypeParam::create_value(91));
+    this->tree.insert({TypeParam::create(1), TypeParam::create(2), TypeParam::create(99)});
+    EXPECT_TRUE(this->tree.contains(TypeParam::create_key(1)));
+    EXPECT_TRUE(this->tree.contains(TypeParam::create_key(2)));
+    EXPECT_TRUE(this->tree.contains(TypeParam::create_key(33)));
+    EXPECT_TRUE(this->tree.contains(TypeParam::create_key(51)));
+    EXPECT_TRUE(this->tree.contains(TypeParam::create_key(91)));
+    EXPECT_TRUE(this->tree.contains(TypeParam::create_key(99)));
 }
 
 TYPED_TEST(BPTreeTest, erase_by_iterator)
 {
-    // TODO
+    this->insert(TypeParam::create(11));
+    this->insert(TypeParam::create(12));
+    this->insert(TypeParam::create(13));
+    EXPECT_EQ(3, this->tree.size());
+    EXPECT_TRUE(this->tree.contains(TypeParam::create_key(11)));
+    EXPECT_TRUE(this->tree.contains(TypeParam::create_key(12)));
+    const auto it = this->tree.erase(this->tree.find(TypeParam::create_key(12)));
+    EXPECT_FALSE(this->tree.contains(TypeParam::create_key(12)));
+    EXPECT_EQ(this->tree.find(TypeParam::create_key(13)), it);
+    this->tree.erase(this->const_tree().find(TypeParam::create_key(11)));
+    EXPECT_FALSE(this->tree.contains(TypeParam::create_key(11)));
+    EXPECT_EQ(1, this->tree.size());
+    const auto end_it = this->tree.erase(this->tree.find(TypeParam::create_key(13)));
+    EXPECT_EQ(this->tree.end(), end_it);
 }
 
 TYPED_TEST(BPTreeTest, erase_range)
 {
-    // TODO
+    for (int i = 19; i < 111; ++i) {
+        this->insert(TypeParam::create(i));
+    }
+    const auto it = this->tree.erase(this->const_tree().find(TypeParam::create_key(51)), this->const_tree().find(TypeParam::create_key(91)));
+    const auto expected = this->tree.find(TypeParam::create_key(91));
+    EXPECT_EQ(expected, it) << "expected iterator next to [51, 91)";
 }
 
 TYPED_TEST(BPTreeTest, erase_key)
 {
-    // TODO
+    this->insert(TypeParam::create(1));
+    this->insert(TypeParam::create(3));
+    this->insert(TypeParam::create(111));
+    EXPECT_EQ(1, this->tree.erase(TypeParam::create_key(3)));
+    EXPECT_EQ(0, this->tree.erase(TypeParam::create_key(2)));
 }
 
 TYPED_TEST(BPTreeTest, empty)

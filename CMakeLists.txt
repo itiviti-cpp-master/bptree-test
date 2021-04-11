@@ -22,5 +22,6 @@ target_link_options(runUnitTests PRIVATE ${LINK_OPTS})
 # Standard linking to gtest stuff
 target_link_libraries(runUnitTests gtest gtest_main)
 
-# Extra linking for the project
-target_link_libraries(runUnitTests bptree_lib)
+if (TARGET bptree_lib)
+    target_link_libraries(runUnitTests bptree_lib)
+endif()
