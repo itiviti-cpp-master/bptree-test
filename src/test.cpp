@@ -120,26 +120,24 @@ struct BPTreeTest : ::testing::Test
         return tree;
     }
 
-    void insert(const std::pair<Key, Value> & el)
+    void insert(const std::pair<typename T::key_type, typename T::value_type> & el)
     {
         tree.insert(el.first, el.second);
     }
 
-    using iterator_t = typename T::iterator;
+    using iterator_t = typename BPTree::iterator;
 
-    Tree& not_empty_container()
+    Tree & not_empty_container()
     {
-        if (sample.empty()) {
-            sample.insert({"a", "student"});
-            sample.insert({"an", "apple"});
-            sample.insert({"Dennis", "Ritchie"});
-            sample.insert({"Bjarne", "Stroustrup"});
+        if (tree.empty()) {
+            tree.insert(T::create_key(111), T::create_value(111));
+            tree.insert(T::create_key(2331), T::create_value(2331));
+            tree.insert(T::create_key(13999), T::create_value(13999));
+            tree.insert(T::create_key(97777), T::create_value(97777));
+            tree.insert(T::create_key(131111), T::create_value(131111));
         }
-
-        return sample;
+        return tree;
     }
-
-    Tree sample;
 };
 
 using TestedTypes = ::testing::Types<Type<int, std::string>, Type<std::string, int>, Type<std::string, std::string>, Type<int, BigOne>>;
