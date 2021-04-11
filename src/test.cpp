@@ -1,4 +1,5 @@
 #include "bptree.h"
+#include "test_iterator.h"
 
 #include <gtest/gtest.h>
 
@@ -105,6 +106,22 @@ struct BPTreeTest : ::testing::Test
     {
         tree.insert(el.first, el.second);
     }
+
+    using iterator_t = typename T::iterator;
+
+    Tree& not_empty_container()
+    {
+        if (sample.empty()) {
+            sample.insert({"a", "student"});
+            sample.insert({"an", "apple"});
+            sample.insert({"Dennis", "Ritchie"});
+            sample.insert({"Bjarne", "Stroustrup"});
+        }
+
+        return sample;
+    }
+
+    Tree sample;
 };
 
 using TestedTypes = ::testing::Types<Type<int, std::string>, Type<std::string, int>, Type<std::string, std::string>, Type<int, BigOne>>;
@@ -373,3 +390,6 @@ TYPED_TEST(BPTreeTest, many_unsorted)
         ++expected_it;
     }
 }
+
+using TypesToTest = ::testing::Types<BPTreeTest<Type<std::string, std::string>>>;
+INSTANTIATE_TYPED_TEST_SUITE_P(BPTree, IteratorTest, TypesToTest);
