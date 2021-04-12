@@ -125,7 +125,7 @@ struct BPTreeTest : ::testing::Test
         tree.insert(el.first, el.second);
     }
 
-    using iterator_t = typename BPTree::iterator;
+    using iterator_t = typename Tree::iterator;
 
     Tree & not_empty_container()
     {
@@ -148,15 +148,15 @@ TYPED_TEST_SUITE(BPTreeTest, TestedTypes);
 TYPED_TEST(BPTreeTest, count)
 {
     this->insert(TypeParam::create(7));
-    EXPECT_EQ(0, this->const_tree().count(6));
-    EXPECT_EQ(1, this->tree.count(7));
+    EXPECT_EQ(0, this->const_tree().count(TypeParam::create_key(6)));
+    EXPECT_EQ(1, this->tree.count(TypeParam::create_key(7)));
 }
 
 TYPED_TEST(BPTreeTest, contains)
 {
     this->insert(TypeParam::create(11));
-    EXPECT_FALSE(this->tree.contains(12));
-    EXPECT_TRUE(this->const_tree().contains(11));
+    EXPECT_FALSE(this->tree.contains(TypeParam::create_key(12)));
+    EXPECT_TRUE(this->const_tree().contains(TypeParam::create_key(11)));
 }
 
 TYPED_TEST(BPTreeTest, equal_range)
@@ -180,7 +180,7 @@ TYPED_TEST(BPTreeTest, equal_range)
         auto [from, to] = this->const_tree().equal_range(TypeParam::create_key(5));
         EXPECT_FALSE(from == to);
         EXPECT_EQ(5, TypeParam::key(*from));
-        EXPECT_TRUE(std::is_const_v<decltype(from->second)>);
+        EXPECT_TRUE(std::is_const_v<std::remove_reference_t<decltype(*from)>>);
         ++from;
         EXPECT_TRUE(from == to);
     }
@@ -202,7 +202,7 @@ TYPED_TEST(BPTreeTest, at)
 
 TYPED_TEST(BPTreeTest, index)
 {
-    EXPECT_TRUE(std::is_lvalue_reference_v<decltype(this->tree.operator [](key))>) << "operator [] should return an lvalue reference";
+    EXPECT_TRUE(std::is_lvalue_reference_v<decltype(this->tree.operator [](TypeParam::create_key(111)))>) << "operator [] should return an lvalue reference";
     EXPECT_TRUE(TypeParam::empty_value(this->tree[TypeParam::create_key(1)]));
     this->tree[TypeParam::create_key(3)] = TypeParam::create_value(3);
     EXPECT_EQ(TypeParam::create_value(3), this->tree[TypeParam::create_key(3)]);
@@ -217,7 +217,7 @@ TYPED_TEST(BPTreeTest, insert)
     }
     {
         const auto key = TypeParam::create_key(51);
-        this->tree.insert(key, TypeParam::create_key(51));
+        this->tree.insert(key, TypeParam::create_value(51));
     }
     this->tree.insert(TypeParam::create_key(91), TypeParam::create_value(91));
     this->tree.insert({TypeParam::create(1), TypeParam::create(2), TypeParam::create(99)});
@@ -370,7 +370,7 @@ TYPED_TEST(BPTreeTest, unsorted_insert)
         TypeParam::create(7), TypeParam::create(11), TypeParam::create(17), TypeParam::create(97),
         TypeParam::create(1001), TypeParam::create(-59), TypeParam::create(23)
     };
-    this->insert(elements.begin(), elements.end());
+    this->tree.insert(elements.begin(), elements.end());
 
     std::vector<typename TypeParam::key_type> sorted_keys;
     sorted_keys.reserve(elements.size());
