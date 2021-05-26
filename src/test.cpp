@@ -7,6 +7,7 @@
 #include <array>
 #include <iomanip>
 #include <map>
+#include <memory>
 #include <random>
 #include <sstream>
 #include <string>
@@ -145,6 +146,127 @@ TYPED_TEST_SUITE(BPTreeTest, TestedTypes);
 
 } // anonymous namespace
 
+TEST(BPTreeBasicTest, copy_construct)
+{
+    using Tree = BPTree<int, std::string>;
+    auto first = std::make_unique<Tree>();
+    const int max = 11317;
+    for (int i = 0; i < max; ++i) {
+        first->insert(i, std::to_string(i));
+    }
+    Tree second = *first;
+    first.reset();
+    for (int i = max; i > 0; --i) {
+        EXPECT_EQ(std::to_string(i-1), second[i-1]);
+        second[i-1] += '@';
+    }
+    Tree third = second;
+    for (auto & [k, v] : third) {
+        v += "#####";
+    }
+    for (const auto & [k, v] : second) {
+        const std::string expected = std::to_string(k) + '@';
+        EXPECT_EQ(expected, v);
+    }
+}
+
+TEST(BPTreeBasicTest, copy_assign)
+{
+    const int max = 10711;
+    using Tree = BPTree<int, std::string>;
+    Tree second, third;
+    third.insert(-111, "Foo");
+    third.insert(-111222, "Bar");
+    third.insert(-1, "Baz");
+    {
+        Tree first;
+        for (int i = 0; i < max; ++i) {
+            first.insert(i, std::to_string(i));
+        }
+        second = first;
+    }
+    for (int i = max; i > 0; --i) {
+        EXPECT_EQ(std::to_string(i-1), second[i-1]);
+    }
+    third = second;
+    EXPECT_EQ(second.size(), third.size());
+    EXPECT_FALSE(third.contains(-1));
+    EXPECT_FALSE(third.contains(-111));
+    for (int i = 0; i < max/2; ++i) {
+        second.erase(i);
+    }
+    EXPECT_EQ(max - max/2, second.size());
+    EXPECT_FALSE(second.contains(11));
+    EXPECT_TRUE(third.contains(11));
+    EXPECT_EQ(std::to_string(1111), third.at(1111));
+}
+
+TEST(BPTreeBasicTest, move_construct)
+{
+    using Tree = BPTree<int, std::string>;
+    const int max = 17293;
+    auto first = std::make_unique<Tree>();
+    for (int i = 0; i < max; ++i) {
+        first->insert(i, std::to_string(i));
+    }
+    Tree second = std::move(*first);
+    first.reset();
+    EXPECT_EQ(max, second.size());
+    for (int i = max; i > 0; --i) {
+        const auto it = second.find(i-1);
+        EXPECT_NE(it, second.end());
+        EXPECT_EQ(i-1, it->first);
+        EXPECT_EQ(std::to_string(i-1), it->second);
+    }
+    Tree third;
+    third.insert(-1, std::string{111, 'a'});
+    third.insert(-2, std::string{222, 'b'});
+    third.insert(-3, std::string{333, 'c'});
+    third.insert(111, std::string{444, 'd'});
+    Tree fourth = std::move(second);
+    second = third;
+    for (int i = 0; i < max; ++i) {
+        EXPECT_TRUE(fourth.contains(i));
+        EXPECT_EQ(std::to_string(i), fourth[i]);
+    }
+    EXPECT_EQ("aaaaaa", second[-1].substr(0, 6));
+    EXPECT_EQ("ccc", second[-3].substr(9, 3));
+    EXPECT_EQ("ddddd", second[111].substr(11, 5));
+}
+
+TEST(BPTreeBasicTest, move_assign)
+{
+    using Tree = BPTree<std::string, int>;
+    const int max = 15601;
+    Tree first, second, third;
+    for (int i = 0; i < max; ++i) {
+        first.insert(std::to_string(i), i);
+    }
+    EXPECT_EQ(max, first.size());
+    for (int i = 0; i < 991; ++i) {
+        second.insert(std::to_string(i), i);
+    }
+    EXPECT_EQ(991, second.size());
+    for (int i = -max; i < 0; ++i) {
+        third.insert(std::to_string(i), i);
+    }
+    EXPECT_EQ(max, third.size());
+    second = std::move(first);
+    first = third;
+    EXPECT_EQ(max, second.size());
+    for (int i = max; i > 0; --i) {
+        const auto it = second.find(std::to_string(i-1));
+        EXPECT_NE(second.end(), it);
+        EXPECT_EQ(std::to_string(i-1), it->first);
+        EXPECT_EQ(i-1, it->second);
+    }
+    EXPECT_EQ(max, first.size());
+    for (const auto & [k, v] : third) {
+        EXPECT_TRUE(first.contains(k));
+        EXPECT_EQ(v, first[k]);
+    }
+}
+
 TYPED_TEST(BPTreeTest, count)
 {
     this->insert(TypeParam::create(7));
@@ -264,6 +386,22 @@ TYPED_TEST(BPTreeTest, erase_key)
     this->insert(TypeParam::create(111));
     EXPECT_EQ(1, this->tree.erase(TypeParam::create_key(3)));
     EXPECT_EQ(0, this->tree.erase(TypeParam::create_key(2)));
+}
+
+TYPED_TEST(BPTreeTest, clear)
+{
+    const int max = 1003;
+    for (int i = 0; i < max; ++i) {
+        this->insert(TypeParam::create(i));
+    }
+    EXPECT_EQ(max, this->tree.size());
+    EXPECT_TRUE(this->tree.contains(501));
+    EXPECT_TRUE(this->tree.contains(1));
+    this->tree.clear();
+    EXPECT_TRUE(this->tree.empty());
+    EXPECT_FALSE(this->tree.contains(501));
+    const auto it = this->tree.find(331);
+    EXPECT_EQ(this->tree.end(), it);
 }
 
 TYPED_TEST(BPTreeTest, empty)
