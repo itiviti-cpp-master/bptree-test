@@ -213,16 +213,16 @@ TEST(BPTreeBasicTest, move_construct)
     first.reset();
     EXPECT_EQ(max, second.size());
     for (int i = max; i > 0; --i) {
-        const auto it = second.find(i-1);
+        auto it = second.find(i-1);
         EXPECT_NE(it, second.end());
         EXPECT_EQ(i-1, it->first);
         EXPECT_EQ(std::to_string(i-1), it->second);
     }
     Tree third;
-    third.insert(-1, std::string{111, 'a'});
-    third.insert(-2, std::string{222, 'b'});
-    third.insert(-3, std::string{333, 'c'});
-    third.insert(111, std::string{444, 'd'});
+    third.insert(-1, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+    third.insert(-2, "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb");
+    third.insert(-3, "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc");
+    third.insert(111, "ddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd");
     Tree fourth = std::move(second);
     second = third;
     for (int i = 0; i < max; ++i) {
@@ -255,7 +255,7 @@ TEST(BPTreeBasicTest, move_assign)
     first = third;
     EXPECT_EQ(max, second.size());
     for (int i = max; i > 0; --i) {
-        const auto it = second.find(std::to_string(i-1));
+        auto it = second.find(std::to_string(i-1));
         EXPECT_NE(second.end(), it);
         EXPECT_EQ(std::to_string(i-1), it->first);
         EXPECT_EQ(i-1, it->second);
@@ -395,12 +395,12 @@ TYPED_TEST(BPTreeTest, clear)
         this->insert(TypeParam::create(i));
     }
     EXPECT_EQ(max, this->tree.size());
-    EXPECT_TRUE(this->tree.contains(501));
-    EXPECT_TRUE(this->tree.contains(1));
+    EXPECT_TRUE(this->tree.contains(TypeParam::create_key(501)));
+    EXPECT_TRUE(this->tree.contains(TypeParam::create_key(1)));
     this->tree.clear();
     EXPECT_TRUE(this->tree.empty());
-    EXPECT_FALSE(this->tree.contains(501));
-    const auto it = this->tree.find(331);
+    EXPECT_FALSE(this->tree.contains(TypeParam::create_key(501)));
+    const auto it = this->tree.find(TypeParam::create_key(331));
     EXPECT_EQ(this->tree.end(), it);
 }
 
