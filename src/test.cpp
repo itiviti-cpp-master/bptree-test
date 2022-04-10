@@ -16,7 +16,7 @@
 
 namespace {
 
-std::mt19937_64 rgen(std::random_device{}());
+std::mt19937_64 rgen(13151719);
 
 struct BigOne
 {
@@ -349,6 +349,8 @@ TYPED_TEST(BPTreeTest, insert)
     EXPECT_TRUE(this->tree.contains(TypeParam::create_key(51)));
     EXPECT_TRUE(this->tree.contains(TypeParam::create_key(91)));
     EXPECT_TRUE(this->tree.contains(TypeParam::create_key(99)));
+    EXPECT_TRUE(this->tree.insert(TypeParam::create_key(13), TypeParam::create_value(13)).second);
+    EXPECT_FALSE(this->tree.insert(TypeParam::create_key(13), TypeParam::create_value(13)).second);
 }
 
 TYPED_TEST(BPTreeTest, erase_by_iterator)
