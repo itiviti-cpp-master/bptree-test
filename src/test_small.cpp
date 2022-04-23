@@ -172,7 +172,7 @@ struct BPTree_3_descending : ::testing::Test
     static constexpr std::size_t InternalCount = 3;
     static constexpr std::size_t BlockSize = InternalCount * sizeof(std::pair<K, void *>) + Overhead;
 
-    BPTree<K, V, BlockSize> tree;
+    BPTree<K, V, BlockSize, Cmp> tree;
 
     static K create_key(const int n)
     {
