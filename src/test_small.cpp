@@ -13,7 +13,7 @@
 
 namespace {
 
-std::mt19937_64 gen{1234567};
+std::mt19937_64 gen{1234567}; // NOLINT
 
 template <class C>
 void shuffle(C & c)
