@@ -16,7 +16,7 @@
 
 namespace {
 
-std::mt19937_64 rgen(13151719);
+std::mt19937_64 rgen(13151719); // NOLINT
 
 struct BigOne
 {
